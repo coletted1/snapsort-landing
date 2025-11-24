@@ -63,7 +63,7 @@
             </button>
         </form>
 
-        <div id="successMessage" class="hidden mt-6">
+        <div id="successMessage" class="hidden mt-6 opacity-0 transition-opacity duration-700">
             <p style="color: #BCBDC0; font-family: Arial, sans-serif;">You're on the list.</p>
         </div>
     </div>
@@ -94,8 +94,22 @@
                 })
             }).catch(err => console.log('Form submitted:', email));
             
-            document.getElementById('successMessage').classList.remove('hidden');
-            document.getElementById('emailForm').style.display = 'none';
+            // Fade out form
+            const form = document.getElementById('emailForm');
+            form.style.opacity = '0';
+            form.style.transition = 'opacity 0.5s ease-out';
+            
+            // Wait for fade out, then show success message
+            setTimeout(() => {
+                form.style.display = 'none';
+                const successMsg = document.getElementById('successMessage');
+                successMsg.classList.remove('hidden');
+                // Trigger fade in
+                setTimeout(() => {
+                    successMsg.classList.remove('opacity-0');
+                    successMsg.classList.add('opacity-100');
+                }, 50);
+            }, 500);
         });
 
         const style = document.createElement('style');
