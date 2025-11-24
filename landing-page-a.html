@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapSort – Variant A</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background-color: #1A1917;
+            color: #BCBDC0;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+    <div class="max-w-md mx-auto text-center space-y-8 py-12 animate-fade-in">
+        <div class="space-y-4">
+            <h1 class="text-4xl md:text-5xl leading-tight tracking-tight">Turn your screenshots into a smart shopping list.</h1>
+            <p class="text-lg" style="color: #BCBDC0;">Every item you capture, organized and ready.</p>
+        </div>
+
+        <form id="emailForm" class="space-y-4 pt-8">
+            <input 
+                type="email" 
+                name="email" 
+                id="emailInput"
+                placeholder="Enter your email"
+                class="w-full rounded-lg p-4 text-base focus:outline-none transition" 
+                style="background-color: #1A1917; border: 1px solid #BCBDC0; color: #BCBDC0;"
+                required 
+            />
+            <button 
+                type="submit"
+                class="rounded-lg px-6 py-3 text-xs font-medium transition-all duration-200 tracking-wider"
+                style="background-color: #1A1917; border: 1px solid #BCBDC0; color: #BCBDC0;"
+                onmouseover="this.style.backgroundColor='#BCBDC0'; this.style.color='#1A1917';"
+                onmouseout="this.style.backgroundColor='#1A1917'; this.style.color='#BCBDC0';"
+            >
+                JOIN WAITLIST
+            </button>
+        </form>
+
+        <div id="successMessage" class="hidden mt-6 p-4 rounded-lg" style="background-color: #2A2927; border: 1px solid #BCBDC0;">
+            <p class="font-medium" style="color: #BCBDC0;">You're on the list.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('emailInput').value;
+            
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'conversion', {
+                    'event_category': 'Waitlist',
+                    'event_label': 'Variant A',
+                    'value': email
+                });
+            }
+            
+            fetch('https://formspree.io/f/manzegjl', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    variant: 'A',
+                    timestamp: new Date().toISOString()
+                })
+            }).catch(err => console.log('Form submitted:', email));
+            
+            document.getElementById('successMessage').classList.remove('hidden');
+            document.getElementById('emailForm').style.display = 'none';
+        });
+
+        const style = document.createElement('style');
+        style.textContent = `
+            input::placeholder {
+                color: #BCBDC0;
+                opacity: 0.6;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
