@@ -82,6 +82,79 @@
             margin: 0 auto 16px;
             font-size: 24px;
         }
+
+        /* File upload area */
+        .upload-area {
+            border: 2px dashed #BCBDC0;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: rgba(15, 14, 13, 0.5);
+        }
+        
+        .upload-area:hover {
+            border-color: #fff;
+            background-color: rgba(15, 14, 13, 0.8);
+        }
+        
+        .upload-area.drag-over {
+            border-color: #fff;
+            background-color: rgba(188, 189, 192, 0.1);
+        }
+
+        /* File preview thumbnails */
+        .file-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .file-thumbnail {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border: 1px solid #BCBDC0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .file-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .file-remove {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background-color: #BCBDC0;
+            color: #1A1917;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        
+        .file-remove:hover {
+            background-color: #fff;
+            transform: scale(1.1);
+        }
+
+        .file-count {
+            font-size: 12px;
+            color: #8a8b8e;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body class="min-h-screen px-4 py-12">
@@ -89,7 +162,7 @@
     <div class="max-w-2xl mx-auto text-center space-y-8 mb-20 animate-fade-in">
         <div class="space-y-4">
             <h1 class="text-4xl md:text-5xl leading-tight tracking-tight">Turn your screenshots into a smart shopping list.</h1>
-            <p class="text-lg" style="color: #BCBDC0;">Capture anything. Find everything.</p>
+            <p class="text-lg" style="color: #BCBDC0;">Upload up to 10 screenshots. Get your curated wishlist in 48 hours.</p>
         </div>
         <video autoplay loop muted playsinline class="mx-auto mt-8 rounded-lg shadow-lg w-full max-w-md">
             <source src= "https://raw.githubusercontent.com/coletted1/snapsort-landing/main/snapsort-prototype.mp4" type="video/mp4">
@@ -106,6 +179,28 @@
                 style="background-color: #0f0e0d; border: 1px solid #BCBDC0; color: #BCBDC0;"
                 required 
             />
+            
+            <!-- File Upload Area -->
+            <div class="upload-area" id="uploadArea">
+                <input 
+                    type="file" 
+                    id="fileInput" 
+                    accept="image/*"
+                    multiple
+                    style="display: none;"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#BCBDC0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 12px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <p style="color: #BCBDC0; margin-bottom: 4px;">Click to upload or drag and drop</p>
+                <p class="file-count">Up to 10 screenshots (PNG, JPG, JPEG)</p>
+            </div>
+            
+            <!-- File Previews -->
+            <div id="filePreviews" class="file-preview"></div>
+            
             <button 
                 type="submit"
                 id="submitButton"
@@ -114,12 +209,12 @@
                 onmouseover="if(!this.disabled) { this.style.backgroundColor='#BCBDC0'; this.style.color='#1A1917'; }"
                 onmouseout="if(!this.disabled) { this.style.backgroundColor='#1A1917'; this.style.color='#BCBDC0'; }"
             >
-                JOIN WAITLIST
+                GET MY WISHLIST
             </button>
         </form>
 
         <div id="successMessage" class="hidden mt-6 opacity-0 transition-opacity duration-700">
-            <p style="color: #BCBDC0; font-family: Arial, sans-serif;">You're on the list.</p>
+            <p style="color: #BCBDC0; font-family: Arial, sans-serif;">Thanks! We'll email your personalized wishlist within 48 hours.</p>
         </div>
     </div>
     
@@ -182,37 +277,124 @@
     </div>
 
     <script>
-        document.getElementById('emailForm').addEventListener('submit', function(e) {
+        const MAX_FILES = 10;
+        let selectedFiles = [];
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const filePreviews = document.getElementById('filePreviews');
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (selectedFiles.length + newFiles.length > MAX_FILES) {
+                alert(`You can only upload up to ${MAX_FILES} screenshots`);
+                return;
+            }
+
+            selectedFiles = [...selectedFiles, ...newFiles];
+            updatePreviews();
+        }
+
+        function updatePreviews() {
+            filePreviews.innerHTML = '';
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const thumbnail = document.createElement('div');
+                    thumbnail.className = 'file-thumbnail';
+                    thumbnail.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview ${index + 1}">
+                        <div class="file-remove" data-index="${index}">×</div>
+                    `;
+                    filePreviews.appendChild(thumbnail);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Update file count
+            const countText = uploadArea.querySelector('.file-count');
+            countText.textContent = `${selectedFiles.length}/${MAX_FILES} screenshots selected`;
+        }
+
+        // Remove file
+        filePreviews.addEventListener('click', (e) => {
+            if (e.target.classList.contains('file-remove')) {
+                const index = parseInt(e.target.dataset.index);
+                selectedFiles.splice(index, 1);
+                updatePreviews();
+            }
+        });
+
+        // Form submission
+        document.getElementById('emailForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const email = document.getElementById('emailInput').value;
             const button = document.getElementById('submitButton');
             
             // Show loading state
-            button.textContent = 'JOINING...';
+            button.textContent = 'UPLOADING...';
             button.disabled = true;
             button.style.opacity = '0.6';
             button.style.cursor = 'not-allowed';
             
             if (typeof gtag !== 'undefined') {
                 gtag('event', 'conversion', {
-                    'event_category': 'Waitlist',
-                    'event_label': 'Main Landing Page',
+                    'event_category': 'Wishlist_Request',
+                    'event_label': 'Screenshot Upload',
                     'value': email
                 });
             }
+
+            // Prepare form data with files
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('variant', 'Screenshot Upload');
+            formData.append('timestamp', new Date().toISOString());
+            formData.append('fileCount', selectedFiles.length);
             
-            fetch('https://formspree.io/f/manzegjl', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: email,
-                    variant: 'Main',
-                    timestamp: new Date().toISOString()
-                })
-            }).catch(err => console.log('Form submitted:', email));
+            // Add all files
+            selectedFiles.forEach((file, index) => {
+                formData.append(`screenshot${index + 1}`, file);
+            });
+            
+            try {
+                await fetch('https://formspree.io/f/manzegjl', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+            } catch (err) {
+                console.log('Form submitted:', email, `with ${selectedFiles.length} files`);
+            }
             
             // Wait a moment for loading state to be visible
             setTimeout(() => {
